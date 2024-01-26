@@ -1,30 +1,48 @@
-from fastapi import FastAPI, HTTPException,Depends
+from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, String, Integer, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from google.cloud import translate_v2 as translate
 from google.oauth2 import service_account
+import os
 
-
-
+# Initialize the FastAPI app
 app = FastAPI()
+
+# Base class for SQLAlchemy models
 Base = declarative_base()
 
-# Database Configuration
+# Google Cloud credentials for Translation API
+GOOGLE_CREDENTIALS = '/Users/joaovasco/Desktop/unbabel/extra/my_fastapi_project/alien-aileron-412301-6a984fd02879.json'
+
+# Database connection URL
 SQLALCHEMY_DATABASE_URL = "postgresql://myuser:vaskinho@localhost/mydatabase"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
+
+# Configure sessionmaker for database interactions
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Database Model
 class LanguageDetection(Base):
+    """
+    SQLAlchemy ORM model for the language_detection table.
+    Stores detected language information for texts.
+
+    Attributes:
+        id (Integer): The primary key.
+        content (Text): The original text whose language was detected.
+        detected_language (String): The ISO code of the detected language.
+    """
     __tablename__ = "language_detection"
     id = Column(Integer, primary_key=True, index=True)
     content = Column(Text, nullable=False)
     detected_language = Column(String, nullable=False)
 
-# Dependency
 def get_db():
+    """
+    Generator that provides a database session for each request.
+    Yields a session and ensures its closure after use.
+    """
     db = SessionLocal()
     try:
         yield db
@@ -33,7 +51,9 @@ def get_db():
 
 class Text(BaseModel):
     """
-    Model representing text input for language detection.
+    Pydantic model for the request body.
+    Used for validating the data received in the request.
+
     Attributes:
         content (str): The text content to be analyzed for language detection.
     """
@@ -41,48 +61,51 @@ class Text(BaseModel):
 
 def detect_language(text: str) -> str:
     """
-    Detect the language of a given text using Google Cloud Translation API.
-    
+    Detects the language of the given text using Google Cloud Translation API.
+
     Args:
-        text (str): The text for which the language needs to be detected.
+        text (str): Text whose language needs to be detected.
 
     Returns:
-        str: Detected language code (e.g., 'en' for English).
+        Detected language code (e.g., 'en' for English).
 
     Raises:
-        Exception: If an error occurs during language detection.
+        Exception: Any exceptions that occur during the API call.
     """
     try:
-        key_path = "/Users/joaovasco/Desktop/unbabel/extra/my_fastapi_project/alien-aileron-412301-6a984fd02879.json"
         credentials = service_account.Credentials.from_service_account_file(
-            key_path, scopes=["https://www.googleapis.com/auth/cloud-platform"])
-
+            GOOGLE_CREDENTIALS, scopes=["https://www.googleapis.com/auth/cloud-platform"])
         client = translate.Client(credentials=credentials)
         result = client.detect_language(text)
         return result['language']
     except Exception as e:
-        # Log the exception for debugging purposes
-        # In a production environment, consider using a logging framework
+        # Consider replacing print with logging for production use
         print(f"An error occurred in detect_language: {e}")
-        # Re-raise the exception to be handled by the caller
         raise
-
 
 @app.post("/detect-language/")
 def detect_language_endpoint(text: Text, db: Session = Depends(get_db)):
+    """
+    FastAPI endpoint to detect the language of provided text and store in database.
+
+    Args:
+        text (Text): Instance of Text model containing content to be analyzed.
+        db (Session): Database session dependency injected by FastAPI.
+
+    Returns:
+        JSON response with the detected language.
+    """
     if not text.content:
         raise HTTPException(status_code=400, detail="No content provided")
     
-    language = detect_language(text.content)
+    detected_language = detect_language(text.content)
 
-    # Insert into database
-    language_record = LanguageDetection(content=text.content, detected_language=language)
+    # Create and add new record to the database
+    language_record = LanguageDetection(content=text.content, detected_language=detected_language)
     db.add(language_record)
     db.commit()
 
-    return {"language": language}
+    return {"language": detected_language}
 
-# Create the database tables
+# Auto-create all tables based on Base metadata
 Base.metadata.create_all(bind=engine)
-
-
