@@ -68,3 +68,7 @@ curl -X 'POST' \
 ```
 
 The detected language will be returned in the response and stored in the PostgreSQL database for record-keeping and further analysis.
+
+##Database Results
+<img width="536" alt="Screenshot 2024-01-26 at 1 38 38 AM" src="https://github.com/joaovasco01/Unbabel_Technologies/assets/61276111/4bd2f772-14b1-4372-b61d-a372b278834b">
+
