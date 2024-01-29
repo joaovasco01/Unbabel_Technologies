@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from google.cloud import translate_v2 as translate
 from google.oauth2 import service_account
 import os
+import subprocess
 
 # Initialize the FastAPI app
 app = FastAPI()
@@ -38,6 +39,10 @@ class LanguageDetection(Base):
     content = Column(Text, nullable=False)
     detected_language = Column(String, nullable=False)
 
+class SentimentAnalysisRequest(BaseModel):
+    content: str
+
+
 def get_db():
     """
     Generator that provides a database session for each request.
@@ -58,6 +63,7 @@ class Text(BaseModel):
         content (str): The text content to be analyzed for language detection.
     """
     content: str
+
 
 def detect_language(text: str) -> str:
     """
@@ -106,6 +112,22 @@ def detect_language_endpoint(text: Text, db: Session = Depends(get_db)):
     db.commit()
 
     return {"language": detected_language}
+
+def analyze_sentiment_with_go(text: str) -> str:
+    try:
+        # Adjust the path to your Go executable as necessary
+        result = subprocess.run(["./sentiment_analysis", text], capture_output=True, text=True, check=True)
+        sentiment_score = result.stdout.strip()
+        return sentiment_score
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while analyzing sentiment: {e}")
+        raise HTTPException(status_code=500, detail="Sentiment analysis failed")
+        
+@app.post("/analyze-sentiment/")
+def analyze_sentiment(request: SentimentAnalysisRequest):
+    sentiment_score = analyze_sentiment_with_go(request.content)
+    return {"text": request.content, "sentiment_score": sentiment_score}
+
 
 # Auto-create all tables based on Base metadata
 Base.metadata.create_all(bind=engine)
