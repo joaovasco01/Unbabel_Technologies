@@ -1,55 +1,75 @@
-FastAPI Language Detection Service
 
-Overview
+# FastAPI Language Detection Service
 
-This project is a language detection service built with FastAPI and integrated with Google Cloud Translation API. It provides an endpoint that accepts text input and returns the detected language. The project is structured to demonstrate best practices in developing and deploying modern web applications with FastAPI and Google Cloud services.
+## Overview
 
-Features
+This project is a language detection service built with FastAPI, integrated with Google Cloud Translation API, and backed by a PostgreSQL database. It demonstrates best practices in developing and deploying web applications using FastAPI, Google Cloud services, and relational database management systems. It saves the words and the corresponding language they were written in, in the Database.
 
-FastAPI Framework: Utilizes the modern, fast (high-performance), web framework for building APIs with Python 3.7+ based on standard Python type hints.
-Asynchronous Handling: Capable of handling asynchronous requests, making it suitable for high-performance scenarios.
-Google Cloud Translation API Integration: Seamlessly integrates with Google Cloud Translation API for efficient and accurate language detection.
-Automatic API Documentation: Includes automatically generated interactive API documentation (Swagger UI).
-Getting Started
+## Features
 
-Prerequisites
-Python 3.7+
-FastAPI
-Uvicorn (ASGI server)
-Google Cloud Account and Translation API access
+- **FastAPI Framework**: Utilizes FastAPI for building high-performance APIs with Python 3.7+, leveraging standard Python type hints.
+- **Asynchronous Handling**: Capable of handling asynchronous requests, enhancing performance in demanding scenarios.
+- **Google Cloud Translation API Integration**: Seamlessly integrates with Google Cloud Translation API for accurate language detection.
+- **PostgreSQL Database Integration**: Incorporates a PostgreSQL database to store and manage detected language data.
+- **Automatic API Documentation**: Features automatically generated interactive API documentation using Swagger UI.
 
-Installation
-Clone the repository:
-git clone https://github.com/your-username/your-repository-name.git
+## Getting Started
 
-Navigate to the project directory:
-cd your-repository-name
+### Prerequisites
 
-Create a virtual environment 
-python -m venv venv
-source venv/bin/activate  # On Unix/macOS
-venv\Scripts\activate  # On Windows
+- Python 3.7+
+- FastAPI
+- Uvicorn (ASGI server)
+- Google Cloud Account with Translation API access
+- PostgreSQL database
 
-Configuration
-Set up the Google Cloud service account and download the JSON key file.
-Update the key_path in main.py with the path to your Google Cloud service account JSON key file.
-Running the Application
+### Installation
 
-Start the FastAPI server:
-bash
-Copy code
-uvicorn main:app --reload
-The service will be available at http://127.0.0.1:8000.
-Access the interactive API documentation at http://127.0.0.1:8000/docs.
+1. Clone the repository:
+   ```
+   git clone https://github.com/your-username/your-repository-name.git
+   ```
+2. Navigate to the project directory:
+   ```
+   cd your-repository-name
+   ```
+3. Create a virtual environment:
+   ```
+   python -m venv venv
+   source venv/bin/activate # Unix/macOS
+   venv\Scripts\activate # Windows
+   ```
 
+### Configuration
 
-Usage
-To detect the language of a text, send a POST request to /detect-language/ endpoint with a JSON payload containing the text:
+1. Set up the Google Cloud service account and download the JSON key file. 
+2. Place the key file in a secure location and update `GOOGLE_CREDENTIALS` in `main.py` with its path.
+3. Ensure PostgreSQL is installed and running. Update `SQLALCHEMY_DATABASE_URL` in `main.py` with your database credentials.
 
-bash
-Copy code
+### Running the Application
+
+1. Start the FastAPI server:
+   ```
+   uvicorn main:app --reload
+   ```
+2. The service will be available at `http://127.0.0.1:8000`.
+3. Access the interactive API documentation at `http://127.0.0.1:8000/docs`.
+
+## Usage
+
+To detect the language of a text, send a POST request to the `/detect-language/` endpoint with a JSON payload containing the text:
+
+```bash
 curl -X 'POST' \
   'http://127.0.0.1:8000/detect-language/' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{"content": "Hello, world"}'
+```
+
+The detected language will be returned in the response and stored in the PostgreSQL database for record-keeping and further analysis.
+
+## Database Results
+
+<img width="536" alt="Screenshot 2024-01-26 at 1 38 38 AM" src="https://github.com/joaovasco01/Unbabel_Technologies/assets/61276111/4bd2f772-14b1-4372-b61d-a372b278834b">
+
